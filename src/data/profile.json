@@ -35,19 +35,19 @@
       "id": "p1",
       "label": "PRASHANNA A",
       "sub": "Game Developer",
-      "img": "/public/profile-pic-1.png"
+      "img": "/profile-pic-1.png"
     },
     {
       "id": "p2",
       "label": "GAMEPLAY PROGRAMMER",
       "sub": "2D & 3D Gameplay Systems",
-      "img": "/public/profile-pic-2.png"
+      "img": "/profile-pic-2.png"
     },
     {
       "id": "p3",
       "label": "PLAYER-FIRST THINKING",
       "sub": "AI · Physics · UI Development",
-      "img": "/public/profile-pic-3.png"
+      "img": "/profile-pic-3.png"
     }
   ],
   "loadout": [
