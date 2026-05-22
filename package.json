@@ -1,0 +1,28 @@
+{
+  "name": "prashanna-game-portfolio",
+  "private": true,
+  "version": "4.0.0",
+  "type": "module",
+  "description": "Premium game-dev portfolio. Separate page per section via React Router. React + Vite + GSAP + optional R3F. Adaptive light/dark from #FFAB00.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.105.0",
+    "@react-three/fiber": "^8.16.0",
+    "gsap": "^3.12.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.160.0",
+    "react-router-dom": "^6.24.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "vite": "^5.3.4"
+  }
+}

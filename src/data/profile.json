@@ -1,0 +1,65 @@
+{
+  "name": "Prashanna A",
+  "role": "Game Developer",
+  "classTitle": "Gameplay Programmer",
+  "tagline": "Building polished player experiences from physics to pixels.",
+  "heroSubtitle": "2D & 3D gameplay · AI · Physics · UI",
+  "location": "Bengaluru, Karnataka, India",
+  "phone": "+91 9600315603",
+  "email": "prashanna876@gmail.com",
+  "linkedin": "https://www.linkedin.com/in/prashanna-a",
+  "github": "https://github.com/prashannaantony",
+  "availability": "Immediate Joining · Open to Relocation",
+  "summary": "Game developer with hands-on experience shipping 2D & 3D game prototypes. Skilled in gameplay mechanics, AI systems, physics interactions and UI development for mobile and PC. A strong analytical mindset, fast learner, and genuinely obsessed with how a game feels in the player's hands.",
+  "stats": [
+    { "label": "Projects Shipped", "value": "3" },
+    { "label": "Core Engine", "value": ["Unreal, Unity"] },
+    { "label": "Primary Language", "value": ["C++, C#"] },
+    { "label": "Platforms", "value": "Mobile · PC" }
+  ],
+  "traits": [
+    "Analytical Mindset",
+    "Fast Learner",
+    "Player-First Thinking",
+    "Performance Obsessed"
+  ],
+  "languages": ["English — Proficient", "Tamil — Native"],
+  "learningFocus": [
+    "Shader Programming",
+    "Multiplayer Systems",
+    "Unreal Blueprint Scripting"
+  ],
+  "targetPlatforms": ["Android", "iOS", "PC"],
+  "avatars": [
+    {
+      "id": "p1",
+      "label": "PRASHANNA A",
+      "sub": "Game Developer",
+      "img": "/public/profile-pic-1.png"
+    },
+    {
+      "id": "p2",
+      "label": "GAMEPLAY PROGRAMMER",
+      "sub": "2D & 3D Gameplay Systems",
+      "img": "/public/profile-pic-2.png"
+    },
+    {
+      "id": "p3",
+      "label": "PLAYER-FIRST THINKING",
+      "sub": "AI · Physics · UI Development",
+      "img": "/public/profile-pic-3.png"
+    }
+  ],
+  "loadout": [
+    "Unreal Engine",
+    "Unity 2D & 3D",
+    "C++",
+    "Java",
+    "Git & GitHub",
+    "Visual Studio",
+    "VS Code",
+    "Blender",
+    "Photoshop",
+    "Canva"
+  ]
+}

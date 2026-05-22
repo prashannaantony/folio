@@ -1,0 +1,70 @@
+{
+  "projects": [
+    {
+      "id": "platformer-2d",
+      "title": "2D Platformer",
+      "genre": "Platformer",
+      "engine": "Unreal",
+      "stack": ["Unreal", "C++"],
+      "difficulty": "Normal",
+      "tagline": "Tight controls, escalating levels, satisfying jumps.",
+      "description": "A 2D side-scrolling platformer focused on responsive movement and game feel. Built player movement, jumping and collision systems, then layered in multi-level progression with audio.",
+      "features": [
+        "Player Movement & Jump",
+        "Collision (Rigidbody2D · BoxCollider2D)",
+        "Multi-Level Difficulty Curve",
+        "SFX & Background Music",
+        "Smooth Movement Tuning"
+      ],
+      "highlights": [
+        "Developed player movement, jumping and collision using Rigidbody2D and BoxCollider2D",
+        "Designed multiple levels with increasing difficulty, sound effects and background music",
+        "Improved gameplay feel using physics and smooth character movement mechanics"
+      ]
+    },
+    {
+      "id": "racing-3d",
+      "title": "3D Racing",
+      "genre": "Racing",
+      "engine": "Unreal",
+      "stack": ["Unreal", "C++"],
+      "difficulty": "Hard",
+      "tagline": "Wheel physics, AI rivals, leaderboards.",
+      "description": "A 3D racing game built around believable vehicle handling and competitive AI. Implemented wheel physics, opponent logic and lap systems, then optimized the scene for smooth frame rates.",
+      "features": [
+        "Wheel Physics (WheelCollider)",
+        "AI Opponents",
+        "Lap Tracking",
+        "Leaderboard System",
+        "Draw-Call Optimization"
+      ],
+      "highlights": [
+        "Built vehicle controls and wheel physics using WheelCollider",
+        "Implemented AI opponents, lap tracking and leaderboard systems",
+        "Optimized scene performance by reducing draw calls and improving rendering efficiency"
+      ]
+    },
+    {
+      "id": "endless-runner",
+      "title": "Endless Runner",
+      "genre": "Endless Runner",
+      "engine": "Unreal",
+      "stack": ["Unreal", "C++"],
+      "difficulty": "Adaptive",
+      "tagline": "Procedural obstacles, adaptive difficulty, high-score chase.",
+      "description": "An endless runner engineered for performance and replayability. Used object pooling for dynamic obstacle spawning, scaled difficulty to player skill, and built a full responsive UI loop.",
+      "features": [
+        "Obstacle Spawning (Object Pooling)",
+        "Adaptive Difficulty by Score",
+        "Score Tracking",
+        "High-Score Saving",
+        "Restart System"
+      ],
+      "highlights": [
+        "Created dynamic obstacle spawning using object pooling",
+        "Added adaptive difficulty based on player score and progression",
+        "Developed responsive UI: score tracking, high-score saving and restart system"
+      ]
+    }
+  ]
+}

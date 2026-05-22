@@ -1,0 +1,36 @@
+{
+  "timeline": [
+    {
+      "id": "edu",
+      "year": "2021–24",
+      "title": "BE – Mechanical Engineering",
+      "org": "Easwari Engineering College, Chennai",
+      "text": "Built an analytical, systems-first mindset. Picked up OOP with Java, mathematics and CAD — the base that later carried into game architecture.",
+      "tags": ["Mechanics", "Mathematics", "OOP / Java", "CAD"]
+    },
+    {
+      "id": "pivot",
+      "year": "2024",
+      "title": "Transition into Game Development",
+      "org": "Self-Directed",
+      "text": "Pivoted from mechanical engineering into games. Started with Unity, learned C++ deeply, and began shipping playable prototypes across genres.",
+      "tags": ["Unity", "C++", "Game Loop"]
+    },
+    {
+      "id": "ship",
+      "year": "2024–25",
+      "title": "Shipped 3 Game Prototypes",
+      "org": "Portfolio Builds, Bengaluru",
+      "text": "Designed and built a 2D platformer, a 3D racing game and an endless runner — covering physics, AI, procedural systems and responsive UI end-to-end.",
+      "tags": ["Physics", "AI Logic", "Procedural", "UI"]
+    },
+    {
+      "id": "waiting",
+      "year": "Now",
+      "title": "Waiting for the Opportunity",
+      "org": "Open to Game Development Roles",
+      "text": "Actively looking for an opportunity to contribute, learn and grow as a game developer while building strong gameplay and system design skills.",
+      "tags": ["Game Development", "Learning", "Growth"]
+    }
+  ]
+}

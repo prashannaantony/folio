@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The component injects its full game-UI stylesheet at runtime via a <style>
+   tag (see StyleTag in GamePortfolio.jsx), so all theming lives with the
+   component and ships as one self-contained file. These globals just reset
+   the page and lock the viewport for the fullscreen game-shell layout. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #06070d;
+}
+
+body {
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

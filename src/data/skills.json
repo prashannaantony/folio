@@ -1,0 +1,46 @@
+{
+  "categories": [
+    {
+      "id": "programming",
+      "name": "Programming",
+      "tags": ["C++", "Java", "Object-Oriented Programming", "Debugging"]
+    },
+    {
+      "id": "game-systems",
+      "name": "Game Systems",
+      "tags": [
+        "Physics Simulation",
+        "Collision Detection",
+        "AI Opponent Logic",
+        "Procedural Spawning",
+        "Animation",
+        "Game Loop Architecture"
+      ]
+    },
+    {
+      "id": "engines-tools",
+      "name": "Engines & Tools",
+      "tags": [
+        "Unreal Engine",
+        "Unity 2D & 3D",
+        "Git & GitHub",
+        "Visual Studio",
+        "VS Code",
+        "Blender"
+      ]
+    },
+    {
+      "id": "design",
+      "name": "Design & UI/UX",
+      "tags": [
+        "Responsive HUD Design",
+        "Score Systems",
+        "Menu Flows",
+        "Difficulty Scaling",
+        "Performance Optimization",
+        "Photoshop",
+        "Canva"
+      ]
+    }
+  ]
+}
