@@ -1,59 +1,76 @@
-# Prashanna A — Game-Developer Portfolio (v4, multi-page)
+# 💼 Developer Portfolio — Prashanna A
 
-Premium, page-based portfolio. **Each section is its own page/route** via React Router,
-animated with GSAP, adaptive light/dark, brand color **#FFAB00**.
+> A premium, **route-based developer portfolio** with a custom circular "command-dial" navigation, GSAP animations, adaptive light/dark theming, and an optional WebGL 3D accent. Built to present my game-development work like a product, not a résumé.
 
-## What changed in this version
-- **Separate page per section** — real routes: `/`, `/about`, `/skills`, `/projects`,
-  `/journey`, `/inventory`, `/credits`. One section renders at a time (not one long scroll).
-- **Circular command dial** — rotates smoothly so the active page sits at the top; switching
-  pages eases the ring with no lag. Scroll-wheel over the dial cycles pages; arrows + center
-  readout included. Sits safely above the bottom edge, responsive.
-- **Adaptive theme only** — no manual light/dark switch. Follows the OS theme and updates live;
-  both themes are hand-tuned for contrast and brand consistency.
-- **All section content restored** — About (summary, traits, stats, languages, learning),
-  Skills (names/tags only), Projects (cards + full modal briefings), Inventory, Credits.
-- **Journey = its own page with working smooth scroll** — vertical wheel / drag / arrow keys
-  drive a single eased progress value that moves the track horizontally AND walks the person
-  along the rail (legs/arms animate only while moving). Self-contained, so it works reliably.
-- **Hero image cursor tilt** — the profile card tilts in 3D toward the cursor with a moving glare.
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
+![GSAP](https://img.shields.io/badge/GSAP-88CE02?style=flat-square&logo=greensock&logoColor=black)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white)
 
-## Quick start
+<p align="center">
+  <a href="https://prashannadev.vercel.app"><b>🔴 Live Demo → prashannadev.vercel.app</b></a>
+</p>
+
+---
+
+## 📖 Overview
+
+This is my personal portfolio, designed around a **game-UI aesthetic**. Each section is its own route (not a single long scroll), navigated through a rotating circular dial inspired by in-game radial menus. The whole site is **data-driven** — projects, skills, and milestones are defined in JSON, so content updates never touch component code.
+
+## ✨ Highlights
+
+- **Route-per-section architecture** — `/`, `/about`, `/skills`, `/projects`, `/journey`, `/inventory`, `/credits` via React Router; one section renders at a time.
+- **Circular command dial** — a custom radial navigation that eases the active page to the top; scroll-wheel and arrow-key driven.
+- **Adaptive theming** — follows the OS light/dark preference live; both themes hand-tuned for contrast and brand consistency (brand `#FFAB00`).
+- **Custom "Journey" page** — a single eased progress value drives a horizontal track *and* walks an animated character along a rail (limbs animate only while moving).
+- **3D hero tilt** — the profile card tilts in 3D toward the cursor with a moving glare; optional React Three Fiber amber crystal kept opt-in so three.js doesn't affect first paint.
+- **Data-driven content** — add a project/skill/milestone by editing JSON.
+
+## 🛠️ Tech Stack
+
+**React · React Router · Vite · GSAP · Tailwind CSS · Three.js / React Three Fiber · Bun**
+
+## 📂 Structure
+
+```
+src/
+├── main.jsx
+├── App.jsx                  # React Router: one <Route> per section
+├── index.css
+├── components/
+│   ├── GamePortfolio.jsx    # pages + dial + theme + styles
+│   └── ThreeAccent.jsx      # optional WebGL amber crystal
+└── data/
+    └── profile.json  skills.json  projects.json  journey.json
+```
+
+## 🚀 Getting Started
+
 ```bash
 npm install
 npm run dev       # http://localhost:5173
-npm run build     # verified production build
+npm run build     # production build
 npm run preview
 ```
 
-## Structure
-```
-src/
-  main.jsx
-  App.jsx                      # React Router: one <Route> per section
-  index.css
-  components/
-    GamePortfolio.jsx          # exports each page + the dial + theme + styles
-    ThreeAccent.jsx            # optional React Three Fiber amber crystal
-  data/
-    profile.json  skills.json  projects.json  journey.json
-```
+> For SPA hosting, configure a fallback to `index.html` so deep links like `/projects` resolve. (Automatic on Vercel.)
 
-## Routes → sections
-`/` Home · `/about` · `/skills` · `/projects` · `/journey` · `/inventory` · `/credits`
+## 🖼️ Screenshots
 
-> For production hosting, configure SPA fallback (serve `index.html` for unknown paths) so deep
-> links like `/projects` resolve. On Netlify add a `_redirects` file with `/* /index.html 200`;
-> on Vercel it's automatic; for `vite preview` it already falls back correctly.
+> 📸 _Add a screenshot/GIF of the command dial and a couple of pages here._
 
-## Profile photos (hero only)
-Edit `src/data/profile.json → avatars[]`, set `img` to e.g. `/avatars/me1.jpg` (files in
-`public/avatars/`, square crops). `null` shows a labeled placeholder. Images are hero-only by design.
+## 🎯 What I Built / Learned
 
-## Data-driven
-Add a project → `projects.json`. Add a skill tag → `skills.json`. Add a milestone → `journey.json`.
-Re-theme everything → change `--brand` in the `:root` block of `GamePortfolio.jsx`.
+- A **non-trivial custom navigation component** (radial dial) with smooth easing.
+- **Animation choreography** with GSAP tied to a single progress value.
+- **Data-driven, themeable** front-end architecture.
+- Production deployment with **SPA routing** on Vercel.
 
-## Optional 3D
-Import `ThreeAccent.jsx` and drop `<ThreeAccent />` into the hero frame for a live WebGL amber
-crystal (kept opt-in so three.js doesn't affect first paint).
+---
+
+## 📫 Contact
+
+**Prashanna A** — [Portfolio](https://prashannadev.vercel.app) · [LinkedIn](https://www.linkedin.com/in/prashanna-a-3176102b0) · prashanna876@gmail.com
+
+> _Keywords: React, React Router, Vite, GSAP, Tailwind CSS, Three.js, React Three Fiber, front-end, web development, animation, responsive design, portfolio._
