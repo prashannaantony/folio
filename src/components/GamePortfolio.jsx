@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import gsapLib from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import profileData from "../data/profile.json";
@@ -104,6 +110,73 @@ const Icon = ({ name, size = 18, color = "currentColor" }) => {
       </>
     ),
 
+    play: (
+      <path
+        d="M7.5 4.8 19 12 7.5 19.2z"
+        fill={color}
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    ),
+
+    pause: (
+      <>
+        <line x1="9" y1="4.8" x2="9" y2="19.2" strokeWidth="2.4" />
+        <line x1="15" y1="4.8" x2="15" y2="19.2" strokeWidth="2.4" />
+      </>
+    ),
+
+    volume: (
+      <>
+        <path d="M11 5 6.6 9H3v6h3.6L11 19z" />
+        <path d="M15.4 8.6a5 5 0 0 1 0 6.8" />
+        <path d="M18.4 5.6a9 9 0 0 1 0 12.8" />
+      </>
+    ),
+
+    mute: (
+      <>
+        <path d="M11 5 6.6 9H3v6h3.6L11 19z" />
+        <line x1="16" y1="9.5" x2="21" y2="14.5" />
+        <line x1="21" y1="9.5" x2="16" y2="14.5" />
+      </>
+    ),
+
+    expand: (
+      <>
+        <polyline points="9 3.5 3.5 3.5 3.5 9" />
+        <polyline points="15 3.5 20.5 3.5 20.5 9" />
+        <polyline points="15 20.5 20.5 20.5 20.5 15" />
+        <polyline points="9 20.5 3.5 20.5 3.5 15" />
+      </>
+    ),
+
+    file: (
+      <>
+        <path d="M14 2.5H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
+        <polyline points="14 2.5 14 8 19 8" />
+        <line x1="8.5" y1="13" x2="15.5" y2="13" />
+        <line x1="8.5" y1="17" x2="13" y2="17" />
+      </>
+    ),
+
+    download: (
+      <>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </>
+    ),
+
+    external: (
+      <>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" y1="14" x2="21" y2="3" />
+      </>
+    ),
+
     left: <polyline points="15 18 9 12 15 6" />,
     right: <polyline points="9 18 15 12 9 6" />,
   };
@@ -177,6 +250,297 @@ function AvatarPlaceholder({ avatar }) {
   );
 }
 
+/* ---------------------------------------------------------------------------- RÉSUMÉ
+   The PDF is rendered to canvas with pdf.js rather than handed to an <iframe>,
+   because mobile browsers refuse to inline-render PDFs and would leave a blank
+   box. pdf.js is code-split behind a dynamic import, so nothing ships until a
+   visitor actually opens the document. */
+const RESUME = PROFILE.resume;
+const ZOOM_STEPS = [1, 1.3, 1.7, 2.2];
+
+function ResumeModal({ onClose }) {
+  const stageRef = useRef(null);
+  const sheetRef = useRef(null);
+  const [pdf, setPdf] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [stageW, setStageW] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const status = failed ? "error" : pdf ? "ready" : "loading";
+
+  useEffect(() => {
+    const k = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [onClose]);
+
+  useEffect(() => {
+    let dead = false;
+    let doc = null;
+    (async () => {
+      try {
+        // pdf.js v4 leans on Promise.withResolvers, which older Safari lacks
+        if (typeof Promise.withResolvers !== "function") {
+          Promise.withResolvers = function () {
+            let resolve, reject;
+            const promise = new Promise((a, b) => {
+              resolve = a;
+              reject = b;
+            });
+            return { promise, resolve, reject };
+          };
+        }
+        const [pdfjs, worker] = await Promise.all([
+          import("pdfjs-dist"),
+          import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+        ]);
+        pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+        doc = await pdfjs.getDocument(RESUME.file).promise;
+        if (dead) {
+          doc.destroy();
+          return;
+        }
+        setPdf(doc);
+      } catch (e) {
+        if (!dead) setFailed(true);
+      }
+    })();
+    return () => {
+      dead = true;
+      if (doc) doc.destroy();
+    };
+  }, []);
+
+  // the stage width is state, so a resize and a zoom both drive one redraw path
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const measure = () => setStageW(el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // paint every page at the device pixel ratio so small type stays sharp
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!pdf || !stageW || !sheet) return;
+    let dead = false;
+    (async () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const avail = Math.max(140, stageW - 44); // stage padding
+      const next = document.createDocumentFragment();
+      for (let n = 1; n <= pdf.numPages; n++) {
+        const page = await pdf.getPage(n);
+        if (dead) return;
+        const base = page.getViewport({ scale: 1 });
+        // 100% is fit-to-width — an A4 page is never legible fitted to height
+        const view = page.getViewport({ scale: (avail / base.width) * zoom * dpr });
+        const canvas = document.createElement("canvas");
+        canvas.className = "doc-page";
+        canvas.width = Math.floor(view.width);
+        canvas.height = Math.floor(view.height);
+        canvas.style.width = Math.floor(view.width / dpr) + "px";
+        canvas.style.height = Math.floor(view.height / dpr) + "px";
+        next.appendChild(canvas);
+        try {
+          await page.render({
+            canvasContext: canvas.getContext("2d"),
+            viewport: view,
+          }).promise;
+        } catch (e) {
+          return; // superseded by a newer pass, or the document went away
+        }
+        if (dead) return;
+      }
+      sheet.replaceChildren(next);
+      sheet.classList.add("on");
+    })();
+    return () => {
+      dead = true;
+    };
+  }, [pdf, stageW, zoom]);
+
+  // functional form so a burst of clicks steps through, not past, the scale
+  const step = (dir) =>
+    setZoom((z) => {
+      const i = ZOOM_STEPS.indexOf(z);
+      return ZOOM_STEPS[
+        Math.min(ZOOM_STEPS.length - 1, Math.max(0, i + dir))
+      ];
+    });
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal doc anim-pop"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={RESUME.title}
+      >
+        <button className="modal-close" onClick={onClose} aria-label="Close résumé">
+          ✕
+        </button>
+        <div className="doc-head">
+          <span className="doc-head-icon">
+            <Icon name="file" size={19} color="var(--brand)" />
+          </span>
+          <div className="doc-head-meta">
+            <div className="doc-head-title display">{RESUME.title}</div>
+            <div className="doc-head-sub mono">{RESUME.subtitle}</div>
+          </div>
+          <span className="doc-badge mono">
+            {pdf
+              ? "PDF · " + pdf.numPages + " PAGE" + (pdf.numPages > 1 ? "S" : "")
+              : "PDF"}
+          </span>
+        </div>
+
+        <div className="doc-stage">
+          <span className="fc tl" />
+          <span className="fc tr" />
+          <span className="fc bl" />
+          <span className="fc br" />
+          <div className="doc-scroll" ref={stageRef}>
+            {status === "loading" && (
+              <div className="doc-skeleton">
+                <div className="boot-bar">
+                  <div className="boot-fill" />
+                </div>
+                <span className="mono doc-skeleton-label">LOADING DOCUMENT</span>
+              </div>
+            )}
+            {status === "error" && (
+              <div className="doc-fallback">
+                <Icon name="file" size={30} color="var(--brand)" />
+                <p className="doc-fallback-text">
+                  The inline preview could not load here — the file itself is
+                  fine.
+                </p>
+                <a
+                  className="doc-dl mono"
+                  href={RESUME.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon name="external" size={14} />
+                  OPEN THE PDF
+                </a>
+              </div>
+            )}
+            <div className="doc-sheet" ref={sheetRef} />
+          </div>
+        </div>
+
+        <div className="doc-foot">
+          <div className="doc-zoom">
+            <button
+              className="doc-btn"
+              onClick={() => step(-1)}
+              disabled={status !== "ready" || zoom === ZOOM_STEPS[0]}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <span className="doc-zoom-val mono">{Math.round(zoom * 100)}%</span>
+            <button
+              className="doc-btn"
+              onClick={() => step(1)}
+              disabled={
+                status !== "ready" || zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]
+              }
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+          <div className="doc-actions">
+            <a
+              className="doc-link mono"
+              href={RESUME.file}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon name="external" size={14} />
+              OPEN
+            </a>
+            <a className="doc-dl mono" href={RESUME.file} download={RESUME.filename}>
+              <Icon name="download" size={14} />
+              DOWNLOAD
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* One trigger, three dresses: a hero button, an inline strip on About and a
+   featured band on Credits. Each owns the viewer it opens. */
+function ResumeCta({ variant = "button", onFire }) {
+  const [open, setOpen] = useState(false);
+  const fire = (e) => {
+    if (onFire) onFire(e);
+  };
+  const show = (e) => {
+    fire(e);
+    setOpen(true);
+  };
+
+  return (
+    <>
+      {variant === "button" && (
+        <button className="btn-ghost btn-doc" onClick={show}>
+          <Icon name="file" size={15} />
+          {RESUME.title}
+        </button>
+      )}
+
+      {variant === "strip" && (
+        <button className="doc-strip" onClick={show}>
+          <span className="doc-strip-icon">
+            <Icon name="file" size={18} color="var(--brand)" />
+          </span>
+          <span className="doc-strip-meta">
+            <span className="doc-strip-title">{RESUME.title}</span>
+            <span className="doc-strip-sub mono">{RESUME.blurb}</span>
+          </span>
+          <span className="doc-strip-cta mono">VIEW →</span>
+        </button>
+      )}
+
+      {variant === "band" && (
+        <div className="reveal doc-band">
+          <span className="cr-icon">
+            <Icon name="file" size={20} color="var(--brand)" />
+          </span>
+          <div className="cr-meta">
+            <div className="cr-label mono">{RESUME.title}</div>
+            <div className="cr-value">{RESUME.filename}</div>
+          </div>
+          <div className="cr-actions">
+            <button className="cr-btn" onClick={show}>
+              View
+            </button>
+            <a
+              className="cr-btn ghost"
+              href={RESUME.file}
+              download={RESUME.filename}
+              onClick={fire}
+            >
+              Download
+            </a>
+          </div>
+        </div>
+      )}
+
+      {open && <ResumeModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 /* ---------------------------------------------------------------------------- HERO PAGE */
 export function HomePage({ go }) {
   const [idx, setIdx] = useState(0);
@@ -225,6 +589,7 @@ export function HomePage({ go }) {
             <button className="btn-primary" onClick={() => go("projects")}>
               View Projects <Icon name="arrow" size={16} />
             </button>
+            <ResumeCta variant="button" />
             <button className="btn-ghost" onClick={() => go("contact")}>
               Get in touch
             </button>
@@ -289,6 +654,7 @@ export function AboutPage() {
               </span>
             ))}
           </div>
+          <ResumeCta variant="strip" />
         </div>
         <div className="about-side">
           <div className="reveal card">
@@ -477,7 +843,369 @@ function ProjectArt({ id }) {
     </F>
   );
 }
-function ProjectCard({ project, onOpen }) {
+/* ---------------------------------------------------------------------------- PROJECT VIDEO
+   Gameplay previews. Every clip is an editor screen-recording, so each project
+   declares the pixel rect of its game viewport (`video.crop` in projects.json)
+   and the stage renders only that region — engine chrome never reaches the UI.
+   Cards autoplay a short muted window while they are on screen and pause the
+   moment they leave it; the briefing modal gets the full clip with transport. */
+function useMediaFlag(query) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia(query);
+    const apply = () => setOn(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [query]);
+  return on;
+}
+
+/* Data Saver / 2G visitors get the illustrated cover instead of a download. */
+function isDataSaver() {
+  const c = typeof navigator !== "undefined" ? navigator.connection : null;
+  return !!c && (c.saveData === true || /2g/.test(c.effectiveType || ""));
+}
+
+/* crop rect -> custom properties read by .pv-crop and .pv-media (see styles) */
+function stageVars(v) {
+  if (!v || !v.src) return null;
+  const W = v.sourceWidth || 0;
+  const H = v.sourceHeight || 0;
+  const c =
+    v.crop && W && H ? v.crop : { x: 0, y: 0, width: W || 16, height: H || 9 };
+  const num = (n) => String(Number(n.toFixed(5)));
+  return {
+    "--pv-ar": num(c.width / c.height),
+    "--pv-x": num(c.x / c.width),
+    "--pv-y": num(c.y / c.height),
+    "--pv-w": num((W || c.width) / c.width),
+    "--pv-h": num((H || c.height) / c.height),
+    "--pv-filter": v.filter || "none",
+  };
+}
+const pvSrc = (v) => encodeURI(v.src);
+const pvClock = (s) => {
+  const n = isFinite(s) && s > 0 ? s : 0;
+  return Math.floor(n / 60) + ":" + String(Math.floor(n % 60)).padStart(2, "0");
+};
+const pvPlay = (v) => {
+  const p = v && v.play();
+  if (p && p.catch) p.catch(() => {});
+};
+
+/* card cover: illustrated art crossfades into the looping gameplay window */
+function ProjectCover({ project, halted }) {
+  const media = project.video;
+  const vars = useMemo(() => stageVars(media), [media]);
+  const stageRef = useRef(null);
+  const vidRef = useRef(null);
+  const rafRef = useRef(0);
+  const armedRef = useRef(false);
+  const [shown, setShown] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const reduce = useMediaFlag("(prefers-reduced-motion: reduce)");
+  const [lite] = useState(isDataSaver);
+  const start = media && media.previewStart ? media.previewStart : 0;
+  const span = media && media.previewLength ? media.previewLength : 0;
+  const usable = !!media && !!vars && !lite && !failed;
+
+  // rewind the preview window and drive the loop bar
+  const cycle = useCallback(() => {
+    const v = vidRef.current,
+      stage = stageRef.current;
+    if (!v || !stage) return;
+    const dur = v.duration || 0;
+    const stop = span > 0 ? Math.min(start + span, dur || start + span) : dur;
+    if (stop > start && v.currentTime >= stop) {
+      try {
+        v.currentTime = start;
+      } catch (e) {}
+    }
+    const width = Math.max(0.001, stop - start);
+    const p = Math.min(1, Math.max(0, (v.currentTime - start) / width));
+    stage.style.setProperty("--pv-p", p.toFixed(4));
+    rafRef.current = requestAnimationFrame(cycle);
+  }, [start, span]);
+
+  // nothing is fetched until the card is genuinely on screen
+  useEffect(() => {
+    if (!usable) return;
+    const stage = stageRef.current;
+    if (!stage || typeof IntersectionObserver === "undefined") return;
+    let onScreen = false;
+    const sync = () => {
+      const v = vidRef.current;
+      if (!v) return;
+      if (onScreen && !document.hidden && !halted) {
+        if (!armedRef.current) {
+          armedRef.current = true;
+          v.src = pvSrc(media);
+          v.load();
+        }
+        if (!reduce) pvPlay(v); // reduced motion stops at the still frame
+      } else if (!v.paused) v.pause();
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        onScreen =
+          entries[0].isIntersecting && entries[0].intersectionRatio >= 0.25;
+        sync();
+      },
+      { threshold: [0, 0.25, 0.6] },
+    );
+    io.observe(stage);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [usable, media, reduce, halted]);
+
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+
+  const toStart = () => {
+    const v = vidRef.current;
+    if (v && start > 0 && v.currentTime < start) {
+      try {
+        v.currentTime = start;
+      } catch (e) {}
+    }
+  };
+  const onPlaying = () => {
+    setPlaying(true);
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(cycle);
+  };
+  const onPause = () => {
+    setPlaying(false);
+    cancelAnimationFrame(rafRef.current);
+  };
+
+  return (
+    <div
+      ref={stageRef}
+      style={vars}
+      className={
+        "proj-cover pv-stage" +
+        (shown ? " on" : "") +
+        (playing ? " playing" : "")
+      }
+    >
+      <div className="pv-frame" aria-hidden="true">
+        <div className="pv-art">
+          <ProjectArt id={project.id} />
+        </div>
+        {usable && (
+          <div className="pv-crop">
+            <video
+              ref={vidRef}
+              className="pv-media"
+              muted
+              loop
+              playsInline
+              preload="none"
+              disablePictureInPicture
+              tabIndex={-1}
+              onLoadedMetadata={toStart}
+              onLoadedData={() => setShown(true)}
+              onSeeked={() => setShown(true)}
+              onPlaying={onPlaying}
+              onPause={onPause}
+              onError={() => setFailed(true)}
+            />
+          </div>
+        )}
+      </div>
+      <div className="pv-vig" />
+      <div className="proj-shade" />
+      <span className="proj-genre mono">{project.genre}</span>
+      <span className="proj-diff mono">{project.difficulty}</span>
+      {!!media && (
+        <span className="pv-tag mono">
+          <i className="pv-dot" />
+          {lite ? "PREVIEW OFF" : reduce ? "STILL" : "GAMEPLAY"}
+        </span>
+      )}
+      {usable && !reduce && (
+        <div className="pv-loop">
+          <i />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* modal stage: the full capture with transport, sound and fullscreen */
+function ProjectStage({ project }) {
+  const media = project.video;
+  const vars = useMemo(() => stageVars(media), [media]);
+  const stageRef = useRef(null);
+  const vidRef = useRef(null);
+  const seekRef = useRef(null);
+  const timeRef = useRef(null);
+  const rafRef = useRef(0);
+  const scrubRef = useRef(false);
+  const [shown, setShown] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [dur, setDur] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const reduce = useMediaFlag("(prefers-reduced-motion: reduce)");
+  const usable = !!media && !!vars && !failed;
+
+  // one rAF keeps the scrubber, the fill and the clock in step with the video
+  useEffect(() => {
+    const paint = () => {
+      const v = vidRef.current,
+        stage = stageRef.current;
+      if (v && stage) {
+        const d = v.duration || 0;
+        stage.style.setProperty(
+          "--pv-p",
+          (d ? v.currentTime / d : 0).toFixed(4),
+        );
+        if (seekRef.current && !scrubRef.current)
+          seekRef.current.value = String(v.currentTime);
+        if (timeRef.current)
+          timeRef.current.textContent =
+            pvClock(v.currentTime) + " / " + pvClock(d);
+      }
+      rafRef.current = requestAnimationFrame(paint);
+    };
+    rafRef.current = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  useEffect(() => {
+    const v = vidRef.current;
+    if (!usable || !v) return;
+    v.muted = true; // muted autoplay is the only kind browsers allow
+    if (!reduce) pvPlay(v);
+  }, [usable, reduce]);
+
+  const toggle = () => {
+    const v = vidRef.current;
+    if (!v) return;
+    if (v.paused) pvPlay(v);
+    else v.pause();
+  };
+  const toggleSound = () => {
+    const v = vidRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+    if (!v.muted && v.paused) pvPlay(v);
+  };
+  const onSeek = (e) => {
+    const v = vidRef.current;
+    if (!v) return;
+    try {
+      v.currentTime = Number(e.target.value);
+    } catch (err) {}
+  };
+  const toggleFullscreen = () => {
+    const el = stageRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
+
+  return (
+    <div
+      ref={stageRef}
+      style={vars}
+      className={
+        "modal-cover pv-stage" +
+        (shown ? " on" : "") +
+        (playing ? " playing" : "")
+      }
+    >
+      <div className="pv-frame">
+        <div className="pv-art" aria-hidden="true">
+          <ProjectArt id={project.id} />
+        </div>
+        {usable && (
+          <div className="pv-crop">
+            <video
+              ref={vidRef}
+              className="pv-media"
+              src={pvSrc(media)}
+              muted={muted}
+              loop
+              playsInline
+              preload="metadata"
+              aria-label={project.title + " — gameplay capture"}
+              onClick={toggle}
+              onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)}
+              onLoadedData={() => setShown(true)}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onError={() => setFailed(true)}
+            />
+          </div>
+        )}
+      </div>
+      <div className="pv-vig" />
+      <div className="proj-shade strong" />
+      <div className="modal-cover-text">
+        <span className="proj-genre mono">{project.genre}</span>
+        <h3 className="display modal-title">{project.title}</h3>
+        <p className="modal-tagline">{project.tagline}</p>
+      </div>
+      {usable && (
+        <div className="pv-controls">
+          <button
+            className="pv-btn"
+            onClick={toggle}
+            aria-label={playing ? "Pause video" : "Play video"}
+          >
+            <Icon name={playing ? "pause" : "play"} size={15} />
+          </button>
+          <button
+            className="pv-btn"
+            onClick={toggleSound}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+          >
+            <Icon name={muted ? "mute" : "volume"} size={15} />
+          </button>
+          <input
+            ref={seekRef}
+            className="pv-seek"
+            type="range"
+            min="0"
+            max={dur || 0}
+            step="any"
+            defaultValue="0"
+            aria-label="Seek video"
+            onInput={onSeek}
+            onChange={onSeek}
+            onPointerDown={() => (scrubRef.current = true)}
+            onPointerUp={() => (scrubRef.current = false)}
+            onPointerCancel={() => (scrubRef.current = false)}
+            onKeyDown={() => (scrubRef.current = true)}
+            onKeyUp={() => (scrubRef.current = false)}
+            onBlur={() => (scrubRef.current = false)}
+          />
+          <span className="pv-time mono" ref={timeRef}>
+            0:00 / 0:00
+          </span>
+          <button
+            className="pv-btn"
+            onClick={toggleFullscreen}
+            aria-label="Toggle fullscreen"
+          >
+            <Icon name="expand" size={15} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+function ProjectCard({ project, onOpen, halted }) {
   const ref = useRef(null);
   const onMove = (e) => {
     const el = ref.current;
@@ -500,12 +1228,7 @@ function ProjectCard({ project, onOpen }) {
       onMouseLeave={onLeave}
       onClick={() => onOpen(project)}
     >
-      <div className="proj-cover">
-        <ProjectArt id={project.id} />
-        <div className="proj-shade" />
-        <span className="proj-genre mono">{project.genre}</span>
-        <span className="proj-diff mono">{project.difficulty}</span>
-      </div>
+      <ProjectCover project={project} halted={halted} />
       <div className="proj-body">
         <div className="proj-title-row">
           <h3 className="proj-title display">{project.title}</h3>
@@ -543,19 +1266,11 @@ function ProjectModal({ project, onClose }) {
   }, [onClose]);
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal anim-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="modal wide anim-pop" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>
           ✕
         </button>
-        <div className="modal-cover">
-          <ProjectArt id={project.id} />
-          <div className="proj-shade strong" />
-          <div className="modal-cover-text">
-            <span className="proj-genre mono">{project.genre}</span>
-            <h3 className="display modal-title">{project.title}</h3>
-            <p className="modal-tagline">{project.tagline}</p>
-          </div>
-        </div>
+        <ProjectStage project={project} />
         <div className="modal-body">
           <p className="modal-desc">{project.description}</p>
           <div className="modal-label mono">CORE SYSTEMS</div>
@@ -583,7 +1298,22 @@ function ProjectModal({ project, onClose }) {
                 </span>
               ))}
             </div>
-            <span className="mono modal-engine">ENGINE · {project.engine}</span>
+            <div className="modal-foot-side">
+              <span className="mono modal-engine">
+                ENGINE · {project.engine}
+              </span>
+              {project.repo && (
+                <a
+                  className="repo-btn mono"
+                  href={project.repo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon name="github" size={14} />
+                  SOURCE
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -600,7 +1330,7 @@ export function ProjectsPage() {
       </p>
       <div className="proj-grid">
         {PROJECTS.map((p) => (
-          <ProjectCard key={p.id} project={p} onOpen={setOpen} />
+          <ProjectCard key={p.id} project={p} onOpen={setOpen} halted={!!open} />
         ))}
       </div>
       {open && <ProjectModal project={open} onClose={() => setOpen(null)} />}
@@ -987,6 +1717,7 @@ export function CreditsPage() {
           Looking for a junior gameplay programmer who sweats the details? Fire
           a message my way — literally.
         </p>
+        <ResumeCta variant="band" onFire={onOpen} />
         <div className="cr-grid">
           {links.map((l) => (
             <div key={l.key} className="reveal cr-card">
@@ -1467,6 +2198,163 @@ html,body{margin:0; height:100%; overflow:hidden;}
 .hl-b{color:var(--brand); font-weight:700; flex-shrink:0;}
 .modal-foot{display:flex; justify-content:space-between; align-items:center; padding-top:16px; border-top:1px solid var(--line); gap:12px; flex-wrap:wrap;}
 .modal-engine{font-size:10px; color:var(--muted); letter-spacing:0.14em;}
+
+/* PROJECT VIDEO — cropped gameplay stage shared by cards and the modal.
+   .pv-crop is sized to COVER its container with the crop rect's aspect ratio,
+   then .pv-media is offset inside it so only the game viewport is on screen. */
+.modal.wide{width:min(880px,100%);}
+.pv-stage{position:relative; overflow:hidden; isolation:isolate; background:var(--art-2);}
+.proj-cover.pv-stage{height:auto; aspect-ratio:16/9; border-radius:19px 19px 0 0;}
+.modal-cover.pv-stage{height:auto; aspect-ratio:var(--pv-ar,1.7778); background:#100a0b;}
+.pv-frame{position:absolute; inset:0; overflow:hidden; container-type:size;}
+.pv-art{position:absolute; inset:0; transition:opacity .6s ease, transform .6s ease;}
+.pv-stage.on .pv-art{opacity:0; transform:scale(1.05);}
+.pv-crop{position:absolute; left:50%; top:50%; width:100%; height:100%;
+  width:max(100cqw, calc(100cqh * var(--pv-ar,1.7778)));
+  height:max(100cqh, calc(100cqw / var(--pv-ar,1.7778)));
+  transform:translate(-50%,-50%) scale(var(--pv-zoom,1));
+  transition:transform .55s cubic-bezier(.22,1,.36,1);}
+.pv-media{position:absolute; display:block; object-fit:cover; max-width:none; max-height:none;
+  left:calc(var(--pv-x,0) * -100%); top:calc(var(--pv-y,0) * -100%);
+  width:calc(var(--pv-w,1) * 100%); height:calc(var(--pv-h,1) * 100%);
+  filter:var(--pv-filter,none); opacity:0; transition:opacity .6s ease; backface-visibility:hidden;}
+.pv-stage.on .pv-media{opacity:1;}
+.proj-cover.pv-stage .proj-shade{background:linear-gradient(180deg,transparent 56%,var(--card) 100%);}
+.modal-cover.pv-stage .proj-shade{background:linear-gradient(180deg,transparent 26%,color-mix(in srgb,var(--card) 48%,transparent) 60%,var(--card) 100%);}
+.pv-stage .modal-title,.pv-stage .modal-tagline{text-shadow:0 1px 12px var(--card),0 0 26px var(--card);}
+.pv-vig{position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:radial-gradient(125% 105% at 50% 42%,transparent 52%,rgba(12,7,8,0.42) 100%);}
+
+/* HUD: capture pill + loop bar, both keyed to the brand red */
+.pv-tag{position:absolute; left:12px; bottom:12px; z-index:4; display:inline-flex; align-items:center; gap:7px;
+  font-size:9px; font-weight:700; letter-spacing:0.16em; padding:5px 11px; border-radius:20px; color:#fff;
+  background:rgba(12,7,8,0.58); border:1px solid rgba(255,255,255,0.18); backdrop-filter:blur(6px); pointer-events:none;}
+.pv-dot{width:6px; height:6px; border-radius:50%; background:var(--brand); box-shadow:0 0 9px var(--brand);}
+.pv-stage.playing .pv-dot{animation:pvpulse 1.7s ease-in-out infinite;}
+@keyframes pvpulse{0%,100%{opacity:1; transform:scale(1)}50%{opacity:.3; transform:scale(.65)}}
+.pv-loop{position:absolute; left:0; right:0; bottom:0; height:2px; z-index:4; pointer-events:none;
+  background:color-mix(in srgb,var(--ink) 14%,transparent); opacity:.7; transition:opacity .3s;}
+.proj-card:hover .pv-loop{opacity:1;}
+.pv-loop i{display:block; height:100%; background:var(--brand); box-shadow:0 0 10px var(--brand);
+  transform-origin:left center; transform:scaleX(var(--pv-p,0));}
+.proj-card:hover .pv-crop{--pv-zoom:1.05;}
+.proj-cover.pv-stage::after{content:''; position:absolute; inset:0; z-index:5; pointer-events:none;
+  border-radius:inherit; border:1px solid transparent; transition:border-color .3s;}
+.proj-card:hover .proj-cover.pv-stage::after{border-color:color-mix(in srgb,var(--brand) 55%,transparent);}
+
+/* MODAL TRANSPORT — always dark-on-video, independent of the page theme */
+.pv-stage .modal-cover-text{bottom:62px;}
+.pv-stage .modal-cover-text .proj-genre{position:static; display:inline-flex; margin-bottom:9px;}
+.pv-controls{position:absolute; left:0; right:0; bottom:0; z-index:6; display:flex; align-items:center; gap:10px;
+  padding:12px 14px; background:linear-gradient(180deg,transparent,rgba(9,5,6,0.78));}
+.pv-btn{width:34px; height:34px; flex-shrink:0; padding:0; border-radius:10px; display:grid; place-items:center;
+  cursor:pointer; color:#fff; background:rgba(14,8,9,0.55); border:1px solid rgba(255,255,255,0.2);
+  backdrop-filter:blur(6px); transition:background .2s,border-color .2s,transform .2s;}
+.pv-btn:hover{background:var(--brand); border-color:var(--brand); transform:translateY(-1px);}
+.pv-btn:focus-visible,.pv-seek:focus-visible{outline:2px solid var(--brand); outline-offset:3px;}
+.pv-seek{flex:1; min-width:50px; height:18px; margin:0; padding:0; background:transparent; cursor:pointer;
+  -webkit-appearance:none; appearance:none;}
+.pv-seek::-webkit-slider-runnable-track{height:4px; border-radius:4px;
+  background:linear-gradient(90deg,var(--brand) 0 calc(var(--pv-p,0) * 100%),rgba(255,255,255,0.3) calc(var(--pv-p,0) * 100%) 100%);}
+.pv-seek::-webkit-slider-thumb{-webkit-appearance:none; width:12px; height:12px; margin-top:-4px; border-radius:50%;
+  background:#fff; box-shadow:0 0 0 3px rgba(227,28,35,0.6);}
+.pv-seek::-moz-range-track{height:4px; border-radius:4px; background:rgba(255,255,255,0.3);}
+.pv-seek::-moz-range-progress{height:4px; border-radius:4px; background:var(--brand);}
+.pv-seek::-moz-range-thumb{width:12px; height:12px; border:0; border-radius:50%; background:#fff;
+  box-shadow:0 0 0 3px rgba(227,28,35,0.6);}
+.pv-time{font-size:10px; letter-spacing:0.06em; color:rgba(255,255,255,0.88); flex-shrink:0;
+  font-variant-numeric:tabular-nums;}
+
+/* fullscreen: letterbox instead of crop, and drop the poster furniture */
+.pv-stage:fullscreen{aspect-ratio:auto; background:#000;}
+.pv-stage:fullscreen .pv-crop{width:min(100cqw,calc(100cqh * var(--pv-ar,1.7778)));
+  height:min(100cqh,calc(100cqw / var(--pv-ar,1.7778)));}
+.pv-stage:fullscreen .proj-shade,.pv-stage:fullscreen .modal-cover-text,.pv-stage:fullscreen .pv-vig{display:none;}
+
+/* SOURCE LINK */
+.modal-foot-side{display:flex; align-items:center; gap:13px; flex-wrap:wrap;}
+.repo-btn{display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:0.14em;
+  padding:9px 15px; border-radius:10px; text-decoration:none; color:var(--on-brand); background:var(--brand);
+  border:1px solid var(--brand); transition:transform .2s,box-shadow .2s,filter .2s;}
+.repo-btn:hover{transform:translateY(-2px); filter:brightness(1.06); box-shadow:0 10px 26px rgba(227,28,35,0.34);}
+.repo-btn:focus-visible{outline:2px solid var(--brand); outline-offset:3px;}
+@media (max-width:560px){ .pv-time{display:none;} .pv-stage .modal-cover-text{bottom:58px;} }
+
+/* RÉSUMÉ VIEWER — a document lightbox on the same chrome as the briefing modal */
+.modal.doc{width:min(880px,100%); height:min(90vh,1120px); max-height:90vh; overflow:hidden; text-align:left;
+  display:flex; flex-direction:column;}
+.doc-head{flex-shrink:0; display:flex; align-items:center; gap:14px; padding:18px 62px 18px 22px;
+  border-bottom:1px solid var(--line);}
+.doc-head-icon{width:42px; height:42px; border-radius:12px; flex-shrink:0; display:grid; place-items:center;
+  background:var(--chip-bg); border:1px solid var(--chip-bd);}
+.doc-head-meta{flex:1; min-width:0;}
+.doc-head-title{font-size:19px; font-weight:700; line-height:1.1;}
+.doc-head-sub{font-size:9px; color:var(--muted); letter-spacing:0.16em; margin-top:4px;}
+.doc-badge{font-size:9px; letter-spacing:0.14em; color:var(--chip-ink); padding:5px 11px; border-radius:20px;
+  background:var(--chip-bg); border:1px solid var(--chip-bd); flex-shrink:0; white-space:nowrap;}
+
+.doc-stage{position:relative; flex:1; min-height:0; background:var(--bg-soft);
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.doc-stage .fc{z-index:3; pointer-events:none; width:18px; height:18px;}
+.doc-scroll{position:absolute; inset:0; overflow:auto; display:flex; padding:22px;}
+.doc-scroll::-webkit-scrollbar{width:8px; height:8px;}
+.doc-scroll::-webkit-scrollbar-thumb{background:var(--line); border-radius:8px;}
+.doc-sheet{margin:auto; display:flex; flex-direction:column; gap:16px; opacity:0; transition:opacity .45s ease;}
+.doc-sheet.on{opacity:1;}
+.doc-page{display:block; max-width:none; border-radius:5px; background:#fff; box-shadow:var(--shadow);}
+
+.doc-skeleton{margin:auto; display:flex; flex-direction:column; align-items:center; gap:14px;}
+.doc-skeleton-label{font-size:9px; letter-spacing:0.24em; color:var(--muted);}
+.doc-fallback{margin:auto; max-width:340px; display:flex; flex-direction:column; align-items:center; gap:15px;
+  text-align:center;}
+.doc-fallback-text{color:var(--ink-soft); font-size:14px; line-height:1.6; margin:0;}
+
+.doc-foot{flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  flex-wrap:wrap; padding:14px 18px;}
+.doc-zoom{display:flex; align-items:center; gap:8px;}
+.doc-btn{width:32px; height:32px; padding:0; border-radius:9px; font-size:17px; line-height:1; cursor:pointer;
+  background:var(--card-2); border:1px solid var(--line); color:var(--ink); transition:.2s;}
+.doc-btn:hover:not(:disabled){border-color:var(--brand); color:var(--brand);}
+.doc-btn:disabled{opacity:.35; cursor:default;}
+.doc-zoom-val{font-size:10px; color:var(--muted); letter-spacing:0.1em; min-width:44px; text-align:center;
+  font-variant-numeric:tabular-nums;}
+.doc-actions{display:flex; align-items:center; gap:9px;}
+.doc-link,.doc-dl{display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:700;
+  letter-spacing:0.14em; padding:10px 16px; border-radius:10px; text-decoration:none; cursor:pointer;
+  transition:transform .2s,box-shadow .2s,border-color .2s,filter .2s;}
+.doc-link{background:transparent; border:1px solid var(--line); color:var(--ink);}
+.doc-link:hover{border-color:var(--brand); color:var(--brand);}
+.doc-dl{background:var(--brand); border:1px solid var(--brand); color:var(--on-brand);}
+.doc-dl:hover{transform:translateY(-2px); filter:brightness(1.06); box-shadow:0 10px 26px rgba(227,28,35,0.34);}
+.doc-link:focus-visible,.doc-dl:focus-visible,.doc-btn:focus-visible{outline:2px solid var(--brand); outline-offset:3px;}
+
+/* TRIGGERS */
+.btn-doc{display:inline-flex; align-items:center; gap:9px;}
+.doc-strip{display:flex; align-items:center; gap:14px; width:100%; text-align:left; cursor:pointer;
+  margin-top:18px; padding:14px 16px; border-radius:14px; background:var(--bg-soft); border:1px solid var(--line);
+  color:var(--ink); font-family:inherit; transition:border-color .25s,transform .25s,background .25s;}
+.doc-strip:hover{border-color:var(--brand); transform:translateY(-2px); background:var(--chip-bg);}
+.doc-strip:focus-visible{outline:2px solid var(--brand); outline-offset:3px;}
+.doc-strip-icon{width:38px; height:38px; border-radius:11px; flex-shrink:0; display:grid; place-items:center;
+  background:var(--card); border:1px solid var(--line);}
+.doc-strip-meta{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.doc-strip-title{font-size:15px; font-weight:600;}
+.doc-strip-sub{font-size:9px; color:var(--muted); letter-spacing:0.16em;}
+.doc-strip-cta{font-size:10px; letter-spacing:0.14em; color:var(--brand-700); flex-shrink:0;}
+[data-theme="dark"] .doc-strip-cta{color:var(--brand-300);}
+.doc-band{display:flex; align-items:center; gap:15px; width:100%; text-align:left; margin-bottom:14px;
+  padding:16px 18px; border-radius:15px; background:var(--chip-bg); border:1px solid var(--chip-bd);
+  box-shadow:var(--shadow-sm);}
+.doc-band .cr-icon{background:var(--card);}
+@media (max-width:560px){
+  .modal.doc{height:min(92vh,1000px); max-height:92vh;}
+  .doc-head{padding:16px 56px 16px 16px; gap:11px;}
+  .doc-head-icon{width:36px; height:36px;}
+  .doc-badge{display:none;}
+  .doc-scroll{padding:14px;}
+  .doc-foot{justify-content:center;}
+  .doc-band{flex-wrap:wrap;}
+}
 
 /* JOURNEY (own page; internal horizontal scroll) */
 .journey-page{height:100%; display:flex; flex-direction:column; position:relative; overflow:hidden; background:var(--bg-soft);}

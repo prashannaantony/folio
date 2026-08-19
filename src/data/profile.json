@@ -5,11 +5,18 @@
   "tagline": "Building polished player experiences from physics to pixels.",
   "heroSubtitle": "2D & 3D gameplay · AI · Physics · UI",
   "location": "Bengaluru, Karnataka, India",
-  "phone": "+91 9600315603",
+  "phone": "+91 9360209043",
   "email": "prashanna876@gmail.com",
   "linkedin": "https://www.linkedin.com/in/prashanna-a",
   "github": "https://github.com/prashannaantony",
   "availability": "Immediate Joining · Open to Relocation",
+  "resume": {
+    "title": "Résumé",
+    "subtitle": "PRASHANNA A · GAME DEVELOPER",
+    "blurb": "PDF · THE FORMAL VERSION",
+    "file": "/Prashanna_A_Resume.pdf",
+    "filename": "Prashanna_A_Resume.pdf"
+  },
   "summary": "Game developer with hands-on experience shipping 2D & 3D game prototypes. Skilled in gameplay mechanics, AI systems, physics interactions and UI development for mobile and PC. A strong analytical mindset, fast learner, and genuinely obsessed with how a game feels in the player's hands.",
   "stats": [
     { "label": "Projects Shipped", "value": "3" },

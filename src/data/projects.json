@@ -7,8 +7,18 @@
       "engine": "Unreal",
       "stack": ["Unreal", "C++"],
       "difficulty": "Normal",
+      "repo": "https://github.com/prashannaantony/Escape2D",
       "tagline": "Tight controls, escalating levels, satisfying jumps.",
       "description": "A 2D side-scrolling platformer focused on responsive movement and game feel. Built player movement, jumping and collision systems, then layered in multi-level progression with audio.",
+      "video": {
+        "src": "/video/2D Platformer.mp4",
+        "sourceWidth": 1357,
+        "sourceHeight": 720,
+        "crop": { "x": 0, "y": 115, "width": 1035, "height": 584 },
+        "previewStart": 5,
+        "previewLength": 14,
+        "filter": "saturate(1.06) contrast(1.03)"
+      },
       "features": [
         "Player Movement & Jump",
         "Collision (Rigidbody2D · BoxCollider2D)",
@@ -29,8 +39,18 @@
       "engine": "Unreal",
       "stack": ["Unreal", "C++"],
       "difficulty": "Hard",
+      "repo": "https://github.com/prashannaantony/RacingGame",
       "tagline": "Wheel physics, AI rivals, leaderboards.",
       "description": "A 3D racing game built around believable vehicle handling and competitive AI. Implemented wheel physics, opponent logic and lap systems, then optimized the scene for smooth frame rates.",
+      "video": {
+        "src": "/video/3D Racing Game with AI Opponents.mp4",
+        "sourceWidth": 1920,
+        "sourceHeight": 1018,
+        "crop": { "x": 5, "y": 166, "width": 1458, "height": 809 },
+        "previewStart": 74,
+        "previewLength": 11,
+        "filter": "saturate(1.08) contrast(1.04)"
+      },
       "features": [
         "Wheel Physics (WheelCollider)",
         "AI Opponents",
@@ -51,8 +71,18 @@
       "engine": "Unreal",
       "stack": ["Unreal", "C++"],
       "difficulty": "Adaptive",
+      "repo": "https://github.com/prashannaantony/Puzzle",
       "tagline": "Procedural obstacles, adaptive difficulty, high-score chase.",
       "description": "An endless runner engineered for performance and replayability. Used object pooling for dynamic obstacle spawning, scaled difficulty to player skill, and built a full responsive UI loop.",
+      "video": {
+        "src": "/video/Endless Runner with Adaptive Difficulty.mp4",
+        "sourceWidth": 1210,
+        "sourceHeight": 640,
+        "crop": { "x": 13, "y": 168, "width": 888, "height": 452 },
+        "previewStart": 26,
+        "previewLength": 14,
+        "filter": "brightness(1.45) saturate(1.18) contrast(1.02)"
+      },
       "features": [
         "Obstacle Spawning (Object Pooling)",
         "Adaptive Difficulty by Score",
