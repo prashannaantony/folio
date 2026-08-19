@@ -54,7 +54,7 @@ npm run build     # production build
 npm run preview
 ```
 
-> For SPA hosting, configure a fallback to `index.html` so deep links like `/projects` resolve. (Automatic on Vercel.)
+> **SPA hosting:** deep links like `/projects` only resolve if the host rewrites unknown paths to `index.html` — this is *not* automatic on Vercel for a static Vite build. `vercel.json` configures it (along with asset caching); `public/_redirects` covers Netlify.
 
 ## 🖼️ Screenshots
 
