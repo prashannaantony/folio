@@ -11,6 +11,7 @@ import profileData from "../data/profile.json";
 import projectsData from "../data/projects.json";
 import skillsData from "../data/skills.json";
 import journeyData from "../data/journey.json";
+import { event } from "../lib/analytics.js";
 if (typeof window !== "undefined") {
   gsapLib.registerPlugin(ScrollTrigger);
   window.gsap = gsapLib;
@@ -424,6 +425,7 @@ function ResumeModal({ onClose }) {
                   href={RESUME.file}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => event("resume_open", { source: "preview_error" })}
                 >
                   <Icon name="external" size={14} />
                   OPEN THE PDF
@@ -462,11 +464,17 @@ function ResumeModal({ onClose }) {
               href={RESUME.file}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => event("resume_open", { source: "viewer" })}
             >
               <Icon name="external" size={14} />
               OPEN
             </a>
-            <a className="doc-dl mono" href={RESUME.file} download={RESUME.filename}>
+            <a
+              className="doc-dl mono"
+              href={RESUME.file}
+              download={RESUME.filename}
+              onClick={() => event("resume_download", { source: "viewer" })}
+            >
               <Icon name="download" size={14} />
               DOWNLOAD
             </a>
@@ -485,6 +493,7 @@ function ResumeCta({ variant = "button", onFire }) {
     if (onFire) onFire(e);
   };
   const show = (e) => {
+    event("resume_view", { variant });
     fire(e);
     setOpen(true);
   };
@@ -528,7 +537,10 @@ function ResumeCta({ variant = "button", onFire }) {
               className="cr-btn ghost"
               href={RESUME.file}
               download={RESUME.filename}
-              onClick={fire}
+              onClick={(e) => {
+                event("resume_download", { source: "credits_band" });
+                fire(e);
+              }}
             >
               Download
             </a>
@@ -1089,8 +1101,10 @@ function ProjectStage({ project }) {
   const toggle = () => {
     const v = vidRef.current;
     if (!v) return;
-    if (v.paused) pvPlay(v);
-    else v.pause();
+    if (v.paused) {
+      event("project_video_play", { project: project.title });
+      pvPlay(v);
+    } else v.pause();
   };
   const toggleSound = () => {
     const v = vidRef.current;
@@ -1308,6 +1322,7 @@ function ProjectModal({ project, onClose }) {
                   href={project.repo}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => event("project_repo_click", { project: project.title })}
                 >
                   <Icon name="github" size={14} />
                   SOURCE
@@ -1322,6 +1337,10 @@ function ProjectModal({ project, onClose }) {
 }
 export function ProjectsPage() {
   const [open, setOpen] = useState(null);
+  const openProject = (p) => {
+    event("project_open", { project: p.title, engine: p.engine });
+    setOpen(p);
+  };
   return (
     <div className="page pad scroll-page">
       <SectionHead kicker="LEVEL SELECT" title="Projects" />
@@ -1330,7 +1349,12 @@ export function ProjectsPage() {
       </p>
       <div className="proj-grid">
         {PROJECTS.map((p) => (
-          <ProjectCard key={p.id} project={p} onOpen={setOpen} halted={!!open} />
+          <ProjectCard
+            key={p.id}
+            project={p}
+            onOpen={openProject}
+            halted={!!open}
+          />
         ))}
       </div>
       {open && <ProjectModal project={open} onClose={() => setOpen(null)} />}
@@ -1661,6 +1685,7 @@ export function CreditsPage() {
   const onOpen = (e) => launchRocket(e.currentTarget, "open");
   const onCopy = (e, val, key) => {
     e.preventDefault();
+    event("contact_copy", { channel: key });
     if (navigator.clipboard) navigator.clipboard.writeText(val);
     setCopied(key);
     setTimeout(() => setCopied(""), 1500);
@@ -1733,7 +1758,10 @@ export function CreditsPage() {
                   <a
                     className="cr-btn"
                     href={l.href}
-                    onClick={onOpen}
+                    onClick={(e) => {
+                      event("contact_click", { channel: l.key });
+                      onOpen(e);
+                    }}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

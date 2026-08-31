@@ -6,6 +6,9 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { beforeSend } from "./lib/analytics.js";
 import {
   PAGES,
   HomePage,
@@ -85,6 +88,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Shell />
+      {/* Web Analytics: pageviews follow React Router history changes on their
+          own; custom events are fired from the components themselves. */}
+      <Analytics beforeSend={beforeSend} />
+      {/* Speed Insights: real-user Core Web Vitals, same dashboard. */}
+      <SpeedInsights />
     </BrowserRouter>
   );
 }

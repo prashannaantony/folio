@@ -29,15 +29,17 @@ This is my personal portfolio, designed around a **game-UI aesthetic**. Each sec
 
 ## 🛠️ Tech Stack
 
-**React · React Router · Vite · GSAP · Tailwind CSS · Three.js / React Three Fiber · Bun**
+**React · React Router · Vite · GSAP · Tailwind CSS · Three.js / React Three Fiber · Bun · Vercel Analytics**
 
 ## 📂 Structure
 
 ```
 src/
 ├── main.jsx
-├── App.jsx                  # React Router: one <Route> per section
+├── App.jsx                  # React Router + Analytics / Speed Insights mount
 ├── index.css
+├── lib/
+│   └── analytics.js         # safe track() wrapper + beforeSend scrubber
 ├── components/
 │   ├── GamePortfolio.jsx    # pages + dial + theme + styles
 │   └── ThreeAccent.jsx      # optional WebGL amber crystal
@@ -55,6 +57,27 @@ npm run preview
 ```
 
 > **SPA hosting:** deep links like `/projects` only resolve if the host rewrites unknown paths to `index.html` — this is *not* automatic on Vercel for a static Vite build. `vercel.json` configures it (along with asset caching); `public/_redirects` covers Netlify.
+
+## 📊 Analytics
+
+[Vercel Web Analytics](https://vercel.com/docs/analytics) and [Speed Insights](https://vercel.com/docs/speed-insights) are mounted in `src/App.jsx`. Both must also be **enabled once in the Vercel dashboard** (Project → Analytics / Speed Insights → Enable) — the client scripts are served by the platform at `/_vercel/*`, so nothing is collected until they are switched on.
+
+Because this is an SPA, the catch-all rewrite in `vercel.json` deliberately excludes `_vercel/` — without that exclusion the tracking script and its beacons are rewritten to `index.html` and every metric silently reads zero.
+
+Pageviews follow React Router history changes automatically. Custom events fired by the UI:
+
+| Event | Properties | Fired when |
+| --- | --- | --- |
+| `resume_view` | `variant` | Résumé viewer is opened |
+| `resume_open` | `source` | Résumé opened as a raw PDF tab |
+| `resume_download` | `source` | Résumé is downloaded |
+| `project_open` | `project`, `engine` | A project briefing is opened |
+| `project_video_play` | `project` | Gameplay capture is played in the modal |
+| `project_repo_click` | `project` | Source link is followed |
+| `contact_click` | `channel` | An email / phone / social link is opened |
+| `contact_copy` | `channel` | A contact value is copied |
+
+`src/lib/analytics.js` wraps every call: values are trimmed to the length cap Vercel enforces, credential-ish query params (`token`, `email`, `session`, …) are stripped in `beforeSend`, and a thrown or blocked tracker can never break a render. In `npm run dev` events are logged to the console instead of being sent.
 
 ## 🖼️ Screenshots
 
