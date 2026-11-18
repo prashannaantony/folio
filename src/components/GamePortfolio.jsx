@@ -560,6 +560,7 @@ export function HomePage({ go }) {
   const glareRef = useRef(null);
   const avatars = PROFILE.avatars;
   useEffect(() => {
+    if (avatars.length < 2) return;
     const t = setInterval(() => setIdx((i) => (i + 1) % avatars.length), 3800);
     return () => clearInterval(t);
   }, [avatars.length]);
@@ -585,7 +586,7 @@ export function HomePage({ go }) {
   const cur = avatars[idx];
   return (
     <div className="page hero-page">
-      <div className="hero-grid">
+      <div className={"hero-grid" + (cur ? "" : " no-photo")}>
         <div className="hero-copy">
           <div className="reveal eyebrow mono">
             ● AVAILABLE FOR HIRE — {PROFILE.availability}
@@ -611,6 +612,7 @@ export function HomePage({ go }) {
           </div>
         </div>
 
+        {cur && (
         <div
           className="hero-frame-wrap reveal"
           onMouseMove={onMove}
@@ -646,6 +648,7 @@ export function HomePage({ go }) {
           </div>
           <div className="tilt-hint mono">↗ MOVE CURSOR OVER CARD</div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -2119,6 +2122,16 @@ html,body{margin:0; height:100%; overflow:hidden;}
 .hero-page{height:100%; display:flex; align-items:center; padding:40px clamp(20px,5vw,80px);}
 .hero-grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:50px; align-items:center; max-width:1240px; margin:0 auto; width:100%;}
 .hero-copy{display:flex; flex-direction:column; gap:15px;}
+.hero-grid.no-photo{grid-template-columns:1fr; max-width:1100px; text-align:center; justify-items:center;}
+.no-photo .hero-copy{align-items:center; gap:clamp(14px,2.2vh,24px);}
+.no-photo .eyebrow{justify-content:center; font-size:clamp(11px,1vw,13px);}
+.no-photo .hero-name{font-size:clamp(46px,9.5vw,132px);}
+.no-photo .hero-roles,.no-photo .hero-cta,.no-photo .hero-meta{justify-content:center;}
+.no-photo .role-pill{font-size:clamp(13px,1.1vw,15px); padding:7px 18px;}
+.no-photo .hero-tagline{font-size:clamp(18px,2vw,27px); max-width:620px;}
+.no-photo .hero-sub{font-size:clamp(11px,0.95vw,13px);}
+.no-photo .hero-cta{margin-top:clamp(8px,2vh,20px);}
+.no-photo .hero-meta{font-size:clamp(11px,0.95vw,13px);}
 .eyebrow{font-size:11px; letter-spacing:0.16em; color:var(--brand-700); display:flex; align-items:center; gap:7px;}
 [data-theme="dark"] .eyebrow{color:var(--brand-300);}
 .hero-name{font-size:clamp(42px,7vw,84px); font-weight:800; margin:0; line-height:0.98; background:linear-gradient(120deg,var(--ink),var(--brand-700)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
@@ -2479,6 +2492,7 @@ html,body{margin:0; height:100%; overflow:hidden;}
   .page, .hero-page{overflow-y:auto; overflow-x:hidden;}
   .pad{justify-content:flex-start; padding-top:30px;}
   .hero-page{align-items:flex-start; padding-top:30px;}
+  .hero-page:has(.no-photo){align-items:center; padding-top:20px;}
 }
 @media (max-width:768px){
   .pad{padding:40px 18px 110px;}
